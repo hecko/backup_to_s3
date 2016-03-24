@@ -1,0 +1,80 @@
+#!../venv/bin/python3
+
+import os
+import sys
+import time
+import errno
+import argparse
+import subprocess
+import datetime
+import boto3
+from pprint import pprint
+
+parser = argparse.ArgumentParser(description='AWS Glacier backup script')
+parser.add_argument('-b', '--backup_dir', action='store', required=True, help="Dir to fully back up (recursively)")
+parser.add_argument('-u', '--bucket', action='store', required=True, help="Bucket name")
+parser.add_argument('-p', '--prefix', action='store', required=True, help="First bucket dir name")
+parser.add_argument('-v', '--verbose', action='store_true', help="Be verbose")
+parser.add_argument('-d', '--debug', action='store_true', help="Be very verbose")
+parser.add_argument('-f', '--continue_from', action='store', type=int, default=0, help="Continue from this iteration")
+args = parser.parse_args()
+
+def walkdir(dirname):
+    include = [".doc", ".rtf", "docx", ".jpg", ".avi", ".xls", ".ppt", ".crypted"]
+    exclude = [".crypted", ".tmp"]
+    backup_this = []
+    i = 0
+    a = 0
+    total = 0
+    for dirpath, dirsnames, filenames in os.walk(dirname):
+        for f in filenames:
+            i = i + 1
+#            if not f.endswith('.crypted'):
+#                if args.debug:
+#                    print(f + " does not end with .crypted - skipping")
+#                continue
+            if f.lower().endswith(tuple(exclude)):
+                if args.debug:
+                    print("Skip " + f + " no suitable extension")
+                continue
+            if not os.path.isfile(os.path.join(dirpath, f)):
+                continue
+            if not os.path.getsize(os.path.join(dirpath, f)):
+                if args.debug:
+                    print("Skipping " + os.path.join(dirpath, f) + " for NULL size")
+                continue
+            if os.path.getsize(os.path.join(dirpath, f)) > (2000000):
+                if args.debug:
+                    print("Skipping " + os.path.join(dirpath, f) + " - file too large.")
+                continue
+            if args.verbose:
+                print("B (" + str(i) + ") " + os.path.join(dirpath, f))
+            backup_this.append((os.path.abspath(dirpath), f))
+            a = a + 1
+            if i > 1000:
+                total = total + i 
+                print(str(a) + " / " + str(total))
+                i = 0
+    return backup_this
+
+backup_files = walkdir(args.backup_dir)
+
+files_count = len(backup_files)
+
+print("Uploading " + str(files_count) + " files to S3...")
+
+s3 = boto3.resource('s3')
+
+i = 0
+for (this_dir, this_file) in backup_files:
+    i = i + 1
+    if i < args.continue_from:
+        print("Skipping")
+        continue
+
+    archive_f = os.path.join(this_dir, this_file)
+    f_size = os.path.getsize(archive_f)
+
+    print(str(i) + "/" + str(files_count) + " backing up " + str(round(f_size / 1024 / 1024, 1)) + "MB " + str(archive_f)[-150:])
+
+    s3.meta.client.upload_file(archive_f, args.bucket, args.prefix + archive_f) 
