@@ -15,6 +15,7 @@ parser.add_argument('-b', '--backup_dir', action='store', required=True, help="D
 parser.add_argument('-u', '--bucket', action='store', required=True, help="Bucket name")
 parser.add_argument('-p', '--prefix', action='store', required=True, help="First bucket dir name")
 parser.add_argument('-v', '--verbose', action='store_true', help="Be verbose")
+parser.add_argument('-a', '--age', action='store', type=int, help="Only backup files younger than his number of hours")
 parser.add_argument('-d', '--debug', action='store_true', help="Be very verbose")
 parser.add_argument('-f', '--continue_from', action='store', type=int, default=0, help="Continue from this iteration")
 args = parser.parse_args()
@@ -37,6 +38,16 @@ def walkdir(dirname):
                 if args.debug:
                     print("Skip " + f + " no suitable extension")
                 continue
+            if args.age:
+                mtime = os.path.getmtime(os.path.join(dirpath, f))
+                file_age_h = (time.time() - mtime) / 3600
+                if file_age_h > args.age:
+                    if args.debug:
+                        print("File too old: " + str(round(file_age_h, 1)))
+                    continue
+                else:
+                    if args.debug:
+                        print("File young enough: " + str(round(file_age_h, 1)))
             if not os.path.isfile(os.path.join(dirpath, f)):
                 continue
             if not os.path.getsize(os.path.join(dirpath, f)):
