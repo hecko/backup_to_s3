@@ -26,10 +26,11 @@ def walkdir(dirname):
     backup_this = []
     i = 0
     a = 0
-    total = 0
     for dirpath, dirsnames, filenames in os.walk(dirname):
         for f in filenames:
             i = i + 1
+            if i % 20000 == 0:
+                print("To upload: " + str(a) + " / Total analyzed: " + str(i))
 #            if not f.endswith('.crypted'):
 #                if args.debug:
 #                    print(f + " does not end with .crypted - skipping")
@@ -62,10 +63,6 @@ def walkdir(dirname):
                 print("B (" + str(i) + ") " + os.path.join(dirpath, f))
             backup_this.append((os.path.abspath(dirpath), f))
             a = a + 1
-            if i > 1000:
-                total = total + i 
-                print(str(a) + " / " + str(total))
-                i = 0
     return backup_this
 
 backup_files = walkdir(args.backup_dir)
