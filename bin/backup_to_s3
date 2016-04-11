@@ -59,8 +59,7 @@ def walkdir(dirname):
                     print("Skipping " + os.path.join(dirpath, f) + " for NULL size")
                 continue
             if os.path.getsize(os.path.join(dirpath, f)) > (4000000000):
-                if args.debug:
-                    print("Skipping " + os.path.join(dirpath, f) + " - file too large.")
+                print("Skipping " + os.path.join(dirpath, f) + " - file too large.")
                 continue
             if args.verbose:
                 print("B (" + str(i) + ") " + os.path.join(dirpath, f))
