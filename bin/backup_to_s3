@@ -39,8 +39,13 @@ def walkdir(dirname):
                 if args.debug:
                     print("Skip " + f + " no suitable extension")
                 continue
+            if not os.path.isfile(os.path.join(dirpath, f)):
+                continue
             if args.age:
-                mtime = os.path.getmtime(os.path.join(dirpath, f))
+                try:
+                    mtime = os.path.getmtime(os.path.join(dirpath, f))
+                except FileNotFoundError as e:
+                    continue
                 file_age_h = (time.time() - mtime) / 3600
                 if file_age_h > args.age:
                     if args.debug:
@@ -49,8 +54,6 @@ def walkdir(dirname):
                 else:
                     if args.debug:
                         print("File young enough: " + str(round(file_age_h, 1)))
-            if not os.path.isfile(os.path.join(dirpath, f)):
-                continue
             if not os.path.getsize(os.path.join(dirpath, f)):
                 if args.debug:
                     print("Skipping " + os.path.join(dirpath, f) + " for NULL size")
@@ -81,7 +84,11 @@ for (this_dir, this_file) in backup_files:
         continue
 
     archive_f = os.path.join(this_dir, this_file)
-    f_size = os.path.getsize(archive_f)
+    try:
+        f_size = os.path.getsize(archive_f)
+    except Exception as e:
+        print(str(e))
+        continue
 
     print(str(i) + "/" + str(files_count) + " backing up " + str(round(f_size / 1024 / 1024, 1)) + "MB " + str(archive_f)[-150:])
 
