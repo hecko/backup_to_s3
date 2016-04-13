@@ -1,6 +1,10 @@
 #!../venv/bin/python3
 
 import os
+
+os.environ['AWS_SHARED_CREDENTIALS_FILE'] = '/home/marcel/.aws/credentials'
+os.environ['AWS_CONFIG_FILE'] = '/home/marcel/.aws/config'
+
 import sys
 import time
 import errno
