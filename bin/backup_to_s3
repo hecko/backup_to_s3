@@ -60,9 +60,12 @@ def walkdir(dirname):
                     if args.debug:
                         print("File too old: " + str(round(file_age_h, 1)))
                     continue
-                else:
-                    if args.debug:
-                        print("File young enough: " + str(round(file_age_h, 1)))
+                if mtime > (time.time() + 7200):
+                    if args.verbose:
+                        print("Files mtime in the future! Skipping: " + os.path.join(dirpath, f))
+                    continue
+                if args.debug:
+                    print("File young enough: " + str(round(file_age_h, 1)))
             if not os.path.getsize(os.path.join(dirpath, f)):
                 if args.debug:
                     print("Skipping " + os.path.join(dirpath, f) + " for NULL size")
@@ -101,3 +104,5 @@ for (this_dir, this_file) in backup_files:
     print(str(i) + "/" + str(files_count) + " backing up " + str(round(f_size / 1024 / 1024, 1)) + "MB " + str(archive_f)[-100:])
 
     s3.meta.client.upload_file(archive_f, args.bucket, args.prefix + archive_f) 
+
+print("DONE")
